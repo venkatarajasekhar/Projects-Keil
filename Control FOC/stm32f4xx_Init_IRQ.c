@@ -101,7 +101,7 @@ void USART_IRQHandler(void)
 }
 #endif
 
-extern void CmdSend(int16_t Temp);
+extern void CmdSend(uint16_t Temp);
 /**
   * @brief  This function handles SysTick Handler.
   * @param  None
@@ -111,7 +111,7 @@ void SysTick_Handler(void)
 {
 	pFOC->_SysTick_Handler();
 	Blinky();
-		//	CmdSend(pFOC->pGetRegM1(MC_PROTOCOL_REG_MEAS_EL_ANGLE));
+	
 }
 
 

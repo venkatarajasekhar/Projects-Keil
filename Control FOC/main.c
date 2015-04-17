@@ -23,7 +23,7 @@ int main()
 	{
 		if (pFOC->pGetStateM1() == IDLE)
 		{
-		//	pFOC->pExecSpeedRampM1(300,0);
+			pFOC->pExecSpeedRampM1(0,0);
 			pFOC->pCmdMotor1(MC_PROTOCOL_CMD_START_MOTOR);
 		}
 		else if (pFOC->pGetStateM1() == FAULT_OVER)
@@ -38,5 +38,7 @@ int main()
 	//	CmdSend(pFOC->pGetRegM1(MC_PROTOCOL_REG_MEAS_EL_ANGLE));
 	};
 }
+
+
 
 

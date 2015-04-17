@@ -6,6 +6,8 @@
 
 #include "FOC_type.h"
 #include "UserInterfaceClass.h"
+#include <stdint.h>
+
 
 #define pADDRESS ((FOC_t*)( ADDRESS ))
 extern const FOC_t* pFOC;
@@ -14,7 +16,7 @@ extern const FOC_t* pFOC;
 FOC_t* GetPointToFunctionFOC(void);
 void SystemInitialize(void);
 void Blinky(void);
-
+void SetPosition(uint32_t position);
 
 #endif
 

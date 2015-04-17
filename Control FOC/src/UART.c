@@ -9,6 +9,8 @@
 #include "stm32f4xx_gpio.h"
 #include "stm32f4xx_usart.h"
 #include "misc.h"
+#include "USART.h"
+//#include "Config.h"
 
 #define	GPIO_RX			GPIOC
 #define	GPIO_TX			GPIOC
@@ -16,7 +18,7 @@
 #define	GPIO_DE 		GPIOA
 
 	/* Configure USART1 Rx as input floating */
-#define PIN_Rx1     7	
+#define PIN_Rx1     7
 #define PIN_Tx1     6
 #define PIN_RE1			8
 #define PIN_DE1			8
@@ -71,13 +73,14 @@ void InitUART(void)
 	
 	
 	
-	GPIO_SetBits(GPIO_DE, 1<<PIN_DE1);
+//	GPIO_SetBits(GPIO_DE, 1<<PIN_DE1);
+//	GPIO_SetBits(GPIO_RE, 1<<PIN_RE1);	
+	
+	GPIO_ResetBits(GPIO_DE, 1<<PIN_DE1);
 	GPIO_ResetBits(GPIO_RE, 1<<PIN_RE1);	
 	
-	
-	
 	// USART init
-	USART_InitStructure.USART_BaudRate 						= 115200;
+	USART_InitStructure.USART_BaudRate 						= 9600;
 	USART_InitStructure.USART_WordLength					= USART_WordLength_8b;
 	USART_InitStructure.USART_StopBits						= USART_StopBits_1;
 	USART_InitStructure.USART_Parity							= USART_Parity_No;
@@ -85,11 +88,14 @@ void InitUART(void)
 	USART_InitStructure.USART_Mode								= USART_Mode_Rx |USART_Mode_Tx; 
 	USART_Init(USART, &USART_InitStructure);
 	USART_Cmd(USART, ENABLE);
-	
-}
-#define SizeUsartTx	300
 
-uint8_t	TxBuf[SizeUsartTx];
+	USART_ITConfig(USART, USART_IT_RXNE, ENABLE);
+	USART_ITConfig(USART, USART_IT_IDLE, ENABLE);	
+
+}
+#define SizeUsartTx	8
+
+uint8_t	TxBuf[SizeUsartTx+10];
 int16_t	TxCnt;
 int16_t	TxPos;
 int8_t	Status = 0;
@@ -103,13 +109,17 @@ int8_t	Status = 0;
 void USART6_IRQHandler(void)
 {
 	unsigned char b;
-  
-//	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)
-//	{
-//		b = USART1->DR;
-//		CallCmdProcess2( 2, b);														// Обработка принятого байта
-//	}
-	if(USART_GetITStatus(USART, USART_IT_TXE) != RESET)
+ 
+	if(USART_GetITStatus(USART, USART_IT_RXNE) == SET)
+	{
+		b = USART->DR;
+		ReceivedDataUART6(b);										// Обработка принятого байта
+	}
+	else if(USART_GetITStatus(USART, USART_IT_IDLE) == SET)
+	{
+		ProcessFrameUART6();
+	}	
+	else if(USART_GetITStatus(USART, USART_IT_TXE) != RESET)
 	{
 		if(TxCnt>0)
 		{
@@ -122,12 +132,14 @@ void USART6_IRQHandler(void)
 		  USART_ITConfig(USART, USART_IT_TC, ENABLE);		// Разрешаем прерывание окончания передачи
 		}
 	}
-	if(USART_GetITStatus(USART, USART_IT_TC) != RESET)
+	else if(USART_GetITStatus(USART, USART_IT_TC) != RESET)
 	{
 		USART_ITConfig(USART, USART_IT_TC, DISABLE);
-	//	CLEAR_BIT(GPIOA->BSRR, (1<<PIN_RE_DE1));					// TX Off
+		USART_ITConfig(USART, USART_IT_RXNE, ENABLE);
+		USART_ITConfig(USART, USART_IT_IDLE, ENABLE);		
+	GPIO_ResetBits(GPIO_DE, 1<<PIN_DE1);
+	GPIO_ResetBits(GPIO_RE, 1<<PIN_RE1);	
 		USART->DR;
-	//	CallCmdProcess2( 0xff, 0);
 		Status = 0;
 	}
 	if(USART->SR & USART_SR_ORE)
@@ -141,7 +153,7 @@ void USART6_IRQHandler(void)
 
 int CountTx = 0;
 
-void CmdSend(int16_t Temp)
+void CmdSend(uint16_t Temp)
 {
 	if(Status == 0)
 	{
@@ -151,15 +163,62 @@ void CmdSend(int16_t Temp)
 		
 		if (++CountTx >= SizeUsartTx/2 )
 		{
+	GPIO_SetBits(GPIO_DE, 1<<PIN_DE1);
+	GPIO_SetBits(GPIO_RE, 1<<PIN_RE1);				
 			CountTx = 0;
 			USART->DR = TxBuf[0];
 			TxPos=1;
 			TxCnt=SizeUsartTx-1;
 			USART_ITConfig(USART, USART_IT_TXE, ENABLE);
-			
+			USART_ITConfig(USART, USART_IT_RXNE, DISABLE);
+			USART_ITConfig(USART, USART_IT_IDLE, DISABLE);				
 			Status = 1;
 		}
 	}
 }
 
 
+#define SizeUsartRx	10
+#define AnswLen			10
+
+uint8_t	RxBufUART6[SizeUsartRx];
+int16_t	RxCntUART6;
+int16_t	RxPosUART6;
+//**************************************************************
+//Имя фукции:	ReceivedDataUART5
+//Описание:		Прием данных
+//вход. значения:
+//вых.  значения:
+//**************************************************************
+void ReceivedDataUART6(uint8_t b)
+{
+	uint16_t crc, tr;
+	uint16_t PersNum;
+
+	// Принят символ из линии 1
+	RxBufUART6[RxPosUART6++] = b;
+
+	if(AnswLen <= RxPosUART6)
+	{
+		RxPosUART6 = 0;
+	}
+}
+
+
+void ProcessFrameUART6(void)
+{
+	if((RxBufUART6[0] == 0xA0) && (RxBufUART6[1] == 0x01) && (RxPosUART6 == 6))
+	{
+		SetPosition( (RxBufUART6[2] << 24) +(RxBufUART6[3] << 16)+(RxBufUART6[4] << 8)+ RxBufUART6[5]);
+	}
+//	if((RxBufUART6[0] == 0xA0) && (RxBufUART6[1] == 0x02) && (AnswLen == 6))
+//	{
+//		SetPosition( (RxBufUART6[2] << 24) +(RxBufUART6[3] << 16)+(RxBufUART6[4] << 8)+ RxBufUART6[5]);
+//	}	
+	
+	
+	
+	RxPosUART6 = 0;
+	USART->SR;
+	USART->DR;
+}
