@@ -1,0 +1,141 @@
+//============================================================
+//
+// File Name    : 'PID.c'
+// Project      :  FOC
+// Title        :
+// Author       : Федорин А.К.
+// Created      : 17/04/2015
+// Revised      :
+// Version      : 1
+// Target MCU   : STM32F4XX
+// Compiler     : Keil 5.10.0.2
+// Editor Tabs  : 2
+//
+// NOTE:
+//============================================================
+#include "PID.h"
+#include "Zettlex.h"
+#include "Config.h"
+#include "USART.h"
+
+
+
+#define	TICK_PID		100
+int32_t CounterPid = TICK_PID;
+
+int32_t drive;
+SPid 		plantPID;
+
+
+/**
+  * @brief  InitPID
+  * @param  None
+  * @retval None
+  */
+void InitPID(void)
+{
+	plantPID.Position = 0x00;
+	
+	plantPID.pGain = 0.002;
+	plantPID.pMin  = -300;
+	plantPID.pMax	 = 300;
+
+	plantPID.iMin   = -162;
+	plantPID.iMax   = 162;
+	plantPID.iGain  = 0.0080;
+	plantPID.iState = 0;
+ 	
+	plantPID.dState = 0;
+	plantPID.dGain  = 0;//0.0580
+	
+}
+
+/**
+  * @brief  ControlPID
+  * @param  None
+  * @retval None
+  */
+void ControlPID(void)
+{
+	double LeftDeviation;
+	double RightDeviation;
+	
+	if (CounterPid-- <= 0)
+	{
+		CounterPid = TICK_PID;
+
+		if (GetZettlexPosition() > plantPID.Position)
+		{
+			RightDeviation = GetZettlexPosition() - plantPID.Position;
+			LeftDeviation  = DEFINITION_ZETTLEX - LeftDeviation;
+		}
+		else
+		{
+			LeftDeviation  = plantPID.Position  - GetZettlexPosition();
+			RightDeviation = DEFINITION_ZETTLEX - LeftDeviation;		
+		}
+
+		
+		if (RightDeviation > LeftDeviation)
+		{
+			drive = UpdatePID(&plantPID, -LeftDeviation, GetZettlexPosition());
+		}
+		else
+		{
+			drive = UpdatePID(&plantPID, RightDeviation, GetZettlexPosition());			
+		}
+		pFOC->pExecSpeedRampM1(drive,0);
+		
+		CmdSend(GetZettlexPosition() >> 16);
+		CmdSend(GetZettlexPosition());
+				CmdSend(0);
+				CmdSend(0);		
+	}		
+}
+
+/**
+  * @brief  UpdatePID
+  * @param  pointer SPid
+  * @param  error
+  * @param  current position
+  * @retval None
+  */
+double UpdatePID(SPid * pid, double error, double position)
+{
+  double pTerm, dTerm, iTerm;
+ 
+  pTerm = pid->pGain * error;    			// calculate the proportional term
+	
+	if (pTerm > plantPID.pMax)
+		pTerm = plantPID.pMax;
+	else if (pTerm < plantPID.pMin)
+		pTerm = plantPID.pMin;
+	
+  pid->iState += error;          			// calculate the integral state with appropriate limiting
+  if (pid->iState > pid->iMax)
+      pid->iState = pid->iMax;     
+  else if (pid->iState < pid->iMin) 
+      pid->iState = pid->iMin;
+	
+  iTerm = pid->iGain * pid->iState;    // calculate the integral term
+	if (position > pid->dState)
+		dTerm = pid->dGain * (position - pid->dState);
+	else
+		dTerm = -pid->dGain * (pid->dState - position);
+	
+  pid->dState = position;
+	
+  return (pTerm + iTerm - dTerm);
+}
+
+/**
+  * @brief  SetPosition
+  * @param  target  position
+  * @retval None
+  */
+void SetPosition(uint32_t position)
+{
+	plantPID.Position = position;
+
+}
+

@@ -1,16 +1,11 @@
-//**************************************************************
-//Имя фукции: InitUART
-//Описание: 	
-//вход. значения:
-//вых.  значения:
-//**************************************************************
-//=========================================================================
+
+
 
 #include "stm32f4xx_gpio.h"
 #include "stm32f4xx_usart.h"
 #include "misc.h"
 #include "USART.h"
-//#include "Config.h"
+#include "..\PID.h"
 
 #define	GPIO_RX			GPIOC
 #define	GPIO_TX			GPIOC
@@ -25,6 +20,12 @@
 
 #define USART			USART6
 
+//**************************************************************
+//Имя фукции: InitUART
+//Описание: 	
+//вход. значения:
+//вых.  значения:
+//**************************************************************
 void InitUART(void)
 {
 	USART_InitTypeDef 			USART_InitStructure;
@@ -71,10 +72,6 @@ void InitUART(void)
   GPIO_InitStruct.GPIO_Pin   = 1<<PIN_Tx1;
 	GPIO_Init(GPIO_TX, &GPIO_InitStruct);
 	
-	
-	
-//	GPIO_SetBits(GPIO_DE, 1<<PIN_DE1);
-//	GPIO_SetBits(GPIO_RE, 1<<PIN_RE1);	
 	
 	GPIO_ResetBits(GPIO_DE, 1<<PIN_DE1);
 	GPIO_ResetBits(GPIO_RE, 1<<PIN_RE1);	
@@ -142,12 +139,10 @@ void USART6_IRQHandler(void)
 		USART->DR;
 		Status = 0;
 	}
-	if(USART->SR & USART_SR_ORE)
-	{	// Сброс ошибки переполнения буфера
-//		USART1->CR1 &= ~USART_CR1_RE;
+	if(USART->SR & USART_SR_ORE)											// Сброс ошибки переполнения буфера
+	{	
 		USART->SR;
 		USART->DR;
-//		USART1->CR1 |= USART_CR1_RE;
 	}	
 }	
 
@@ -192,9 +187,6 @@ int16_t	RxPosUART6;
 //**************************************************************
 void ReceivedDataUART6(uint8_t b)
 {
-	uint16_t crc, tr;
-	uint16_t PersNum;
-
 	// Принят символ из линии 1
 	RxBufUART6[RxPosUART6++] = b;
 
@@ -222,3 +214,4 @@ void ProcessFrameUART6(void)
 	USART->SR;
 	USART->DR;
 }
+

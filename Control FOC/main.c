@@ -17,7 +17,8 @@ int main()
 	pFOC->pCmdInitRAM();
 	pFOC->pCmdInitLib();
 	__enable_irq();
-
+	
+		delay_(50);
 
 	while(1)
 	{
@@ -29,7 +30,6 @@ int main()
 		else if (pFOC->pGetStateM1() == FAULT_OVER)
 		{
 			pFOC->pCmdMotor1(MC_PROTOCOL_CMD_FAULT_ACK);
-			
 		}
 		
 		Value  = pFOC->pGetRegM1(MC_PROTOCOL_REG_STATUS);

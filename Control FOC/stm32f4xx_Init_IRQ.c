@@ -1,6 +1,7 @@
 
 
 #include "Config.h"
+#include "PID.h"
 
 /**
   * @brief  This function handles ADC1/ADC2 interrupt request.
@@ -111,7 +112,7 @@ void SysTick_Handler(void)
 {
 	pFOC->_SysTick_Handler();
 	Blinky();
-	
+	ControlPID();
 }
 
 

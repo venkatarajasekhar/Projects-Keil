@@ -1,10 +1,11 @@
 
 
-
 #ifndef __Zettlex_H
 #define __Zettlex_H
 
 #include <stdint.h>
+
+#define DEFINITION_ZETTLEX		262143
 
 typedef	__packed struct
 {
