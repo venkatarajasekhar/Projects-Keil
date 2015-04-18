@@ -26,6 +26,7 @@ int32_t CounterPid = TICK_PID;
 int32_t drive;
 SPid 		plantPID;
 
+t_StatePid	StatePid = OFF;
 
 /**
   * @brief  InitPID
@@ -34,19 +35,19 @@ SPid 		plantPID;
   */
 void InitPID(void)
 {
-	plantPID.Position = 0x00;
+	plantPID.Position = 0x010000;
 	
-	plantPID.pGain = 0.002;
-	plantPID.pMin  = -300;
-	plantPID.pMax	 = 300;
+	plantPID.pGain = 0.009;
+	plantPID.pMin  = -500;
+	plantPID.pMax	 = 500;
 
 	plantPID.iMin   = -162;
 	plantPID.iMax   = 162;
-	plantPID.iGain  = 0.0080;
+	plantPID.iGain  = 0.0180;
 	plantPID.iState = 0;
  	
 	plantPID.dState = 0;
-	plantPID.dGain  = 0;//0.0580
+	plantPID.dGain  = 0.0580;
 	
 }
 
@@ -64,27 +65,30 @@ void ControlPID(void)
 	{
 		CounterPid = TICK_PID;
 
-		if (GetZettlexPosition() > plantPID.Position)
+		if (StatePid == ON)
 		{
-			RightDeviation = GetZettlexPosition() - plantPID.Position;
-			LeftDeviation  = DEFINITION_ZETTLEX - LeftDeviation;
-		}
-		else
-		{
-			LeftDeviation  = plantPID.Position  - GetZettlexPosition();
-			RightDeviation = DEFINITION_ZETTLEX - LeftDeviation;		
-		}
+			if (GetZettlexPosition() > plantPID.Position)
+			{
+				RightDeviation = GetZettlexPosition() - plantPID.Position;
+				LeftDeviation  = DEFINITION_ZETTLEX - LeftDeviation;
+			}
+			else
+			{
+				LeftDeviation  = plantPID.Position  - GetZettlexPosition();
+				RightDeviation = DEFINITION_ZETTLEX - LeftDeviation;		
+			}
 
-		
-		if (RightDeviation > LeftDeviation)
-		{
-			drive = UpdatePID(&plantPID, -LeftDeviation, GetZettlexPosition());
+			
+			if (RightDeviation > LeftDeviation)
+			{
+				drive = UpdatePID(&plantPID, -LeftDeviation, GetZettlexPosition());
+			}
+			else
+			{
+				drive = UpdatePID(&plantPID, RightDeviation, GetZettlexPosition());			
+			}
+			pFOC->pExecSpeedRampM1(drive,0);
 		}
-		else
-		{
-			drive = UpdatePID(&plantPID, RightDeviation, GetZettlexPosition());			
-		}
-		pFOC->pExecSpeedRampM1(drive,0);
 		
 		CmdSend(GetZettlexPosition() >> 16);
 		CmdSend(GetZettlexPosition());
@@ -139,3 +143,23 @@ void SetPosition(uint32_t position)
 
 }
 
+/**
+  * @brief  SetStatePid
+  * @param  State  -  ON or OFF
+  * @retval None
+  */
+void SetStatePid(t_StatePid _State)
+{
+	StatePid = _State;
+}
+
+
+///**
+//  * @brief  SetStatePid
+//  * @param  State  -  ON or OFF
+//  * @retval None
+//  */
+//int32_t Get(void)
+//{
+//	return 
+//}

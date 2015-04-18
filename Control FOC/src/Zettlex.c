@@ -88,7 +88,6 @@ void ZettlexInitUART(void)
 	USART_Cmd(USART, ENABLE);
 	
 	USART_ITConfig(USART, USART_IT_RXNE, ENABLE);
-	USART_ITConfig(USART, USART_IT_IDLE, ENABLE);	
 }
 
 
@@ -106,9 +105,11 @@ void UART5_IRQHandler(void)
 	{
 		b = USART->DR;
 		ReceivedDataZettlex(b);														// Обработка принятого байта
+		USART_ITConfig(USART, USART_IT_IDLE, ENABLE);	
 	}
 	else if(USART_GetITStatus(USART, USART_IT_IDLE) == SET)
 	{
+		USART_ITConfig(USART, USART_IT_IDLE, DISABLE);	
 		ProcessData();
 	}		
 
@@ -195,6 +196,8 @@ void ProcessData(void)
 {
 	ParseFrame();
 	PreparationData();
+
+	Zettlex.Flags.NewFrame = 1;		
 	
 	if ((CRC16_BUYPASS(&BuffCheckFrame[0],AnswLen) == Zettlex.Crc)
 		&& (Zettlex.Flags.PV == 1)
@@ -204,7 +207,7 @@ void ProcessData(void)
 	}
 	else
 		Zettlex.Flags.BadFrame = 1;		
-	
+
 	RxPos = 0;
 	USART->SR;
 	USART->DR;
@@ -243,5 +246,36 @@ uint16_t CRC16_BUYPASS(uint8_t *data, uint8_t len)
 uint32_t GetZettlexPosition (void)
 {
 	return Zettlex.Position;
+}
+
+
+void CheckAnswersZettlex (void)
+{
+	if (Zettlex.Flags.NoAnswer == 0)
+	{
+		if (Zettlex.Flags.NewFrame == 0)
+		{
+			if (Zettlex.CounterAnswers++ > 5)
+				Zettlex.Flags.NoAnswer = 1;
+		}
+		else		
+			Zettlex.CounterAnswers = 0;
+	}
+	else
+	{
+		if (Zettlex.Flags.NewFrame == 1)
+		{
+			Zettlex.Flags.NoAnswer = 0;
+			Zettlex.CounterAnswers = 0;
+		}
+	}
+	
+	Zettlex.Flags.NewFrame = 0;
+}
+
+
+FlafsZettlex_t GetZettlexFlags (void)
+{
+	return Zettlex.Flags;
 }
 

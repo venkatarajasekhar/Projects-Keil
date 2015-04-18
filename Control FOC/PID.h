@@ -19,6 +19,12 @@ typedef struct
 } SPid;
 
 
+typedef enum
+{
+	OFF,
+	ON,
+} t_StatePid;
+
 void SetPosition(uint32_t position);
 void SetPIDdState(uint32_t position);
 void SetPIDiState(uint32_t position);
@@ -31,7 +37,7 @@ void SetPIDdGain(uint32_t position);
 void InitPID(void);
 void ControlPID(void);
 double UpdatePID(SPid * pid, double error, double position);
-
+void SetStatePid(t_StatePid _State);
 
 
 #endif

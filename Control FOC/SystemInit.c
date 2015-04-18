@@ -52,11 +52,14 @@ void SystemInitialize(void)
 	
 	InitPin();
 	InitSPI();
+		__enable_irq();	
 	InitUART();
 	ZettlexInitUART();
 	InitPID();
-}
+		delay_(200);
 
+}
+extern DataZettlex_t Zettlex;
 /**
   * @brief  Blinky
   * @param  None
@@ -66,15 +69,16 @@ void Blinky(void)
 {
 	State_t	StateMotor;
   State_t StateM1;
-
+	FlafsZettlex_t StateZettlex = GetZettlexFlags();
+	uint16_t State = 0;
 	
 	HandlerKeys();
-	
+
 	if (Counter-- <= 0)
 	{
 		Counter = TICK_BLINKY;
 		
-		if (DRV8301() || CheckKey(DRIVER_OCTV) || CheckKey(DRIVER_FAULT))
+		if (DRV8301() || CheckKey(DRIVER_OCTV) || CheckKey(DRIVER_FAULT) || (StateZettlex.NoAnswer == 1))
 		{
 			GPIO_SetBits(GPIOE, GPIO_Pin_10);
 		}

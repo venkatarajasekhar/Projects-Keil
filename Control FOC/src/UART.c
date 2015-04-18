@@ -134,8 +134,8 @@ void USART6_IRQHandler(void)
 		USART_ITConfig(USART, USART_IT_TC, DISABLE);
 		USART_ITConfig(USART, USART_IT_RXNE, ENABLE);
 		USART_ITConfig(USART, USART_IT_IDLE, ENABLE);		
-	GPIO_ResetBits(GPIO_DE, 1<<PIN_DE1);
-	GPIO_ResetBits(GPIO_RE, 1<<PIN_RE1);	
+		GPIO_ResetBits(GPIO_DE, 1<<PIN_DE1);
+		GPIO_ResetBits(GPIO_RE, 1<<PIN_RE1);	
 		USART->DR;
 		Status = 0;
 	}
@@ -154,19 +154,21 @@ void CmdSend(uint16_t Temp)
 	{
 		TxBuf[CountTx*2 + 0] = Temp >> 8;
 		TxBuf[CountTx*2 + 1] = Temp;
-
 		
 		if (++CountTx >= SizeUsartTx/2 )
 		{
-	GPIO_SetBits(GPIO_DE, 1<<PIN_DE1);
-	GPIO_SetBits(GPIO_RE, 1<<PIN_RE1);				
+			GPIO_SetBits(GPIO_DE, 1<<PIN_DE1);
+			GPIO_SetBits(GPIO_RE, 1<<PIN_RE1);				
+
 			CountTx = 0;
 			USART->DR = TxBuf[0];
 			TxPos=1;
-			TxCnt=SizeUsartTx-1;
-			USART_ITConfig(USART, USART_IT_TXE, ENABLE);
+			TxCnt=SizeUsartTx-1;		
+			
+			USART_ITConfig(USART, USART_IT_TXE,  ENABLE);
 			USART_ITConfig(USART, USART_IT_RXNE, DISABLE);
-			USART_ITConfig(USART, USART_IT_IDLE, DISABLE);				
+			USART_ITConfig(USART, USART_IT_IDLE, DISABLE);	
+			
 			Status = 1;
 		}
 	}
