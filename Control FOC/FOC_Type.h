@@ -8,12 +8,13 @@
 #include "MCInterfaceClass.h"
 #include "Parameters conversion_F4xx.h"
 
-#define ADDRESS  	0x801A000
+#define ADDRESS  	0x80F0000
 
 typedef void (*pf)(void);
 typedef int  (*pfg)(void);
 typedef int  (*pfs)(int);
 typedef int  (*pfss)(signed int,unsigned short int);
+typedef int  (*pfss1)(signed int,signed int);
 
 typedef __packed struct
 {
@@ -35,6 +36,7 @@ typedef __packed struct
 	pf  pCmdInitRAM;	
 	pfs pCmdMotor1;	
 	pfs pGetRegM1;	
+	pfss1 pSetRegM1;
 	
 	pfss pExecSpeedRampM1;
 	pfss pExecTorqueRampM1;
