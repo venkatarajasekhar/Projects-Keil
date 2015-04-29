@@ -111,7 +111,7 @@ void UART5_IRQHandler(void)
 	{
 		USART_ITConfig(USART, USART_IT_IDLE, DISABLE);	
 		ProcessData();
-	}		
+	}
 
 	
 	if(USART->SR & USART_SR_ORE)															// —брос ошибки переполнени€ буфера

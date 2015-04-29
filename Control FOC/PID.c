@@ -20,7 +20,7 @@
 
 
 
-#define	TICK_PID		100
+#define	TICK_PID		4
 int32_t CounterPid = TICK_PID;
 
 int32_t drive;
@@ -37,17 +37,17 @@ void InitPID(void)
 {
 	plantPID.Position = 0x010000;
 	
-	plantPID.pGain = 0.009;
-	plantPID.pMin  = -500;
-	plantPID.pMax	 = 500;
+	plantPID.pGain = 0.034;
+	plantPID.pMin  = -100;
+	plantPID.pMax	 = 100;
 
-	plantPID.iMin   = -162;
-	plantPID.iMax   = 162;
-	plantPID.iGain  = 0.0180;
+	plantPID.iMin   = -4720;
+	plantPID.iMax   = 5720;
+	plantPID.iGain  = 0.00135;
 	plantPID.iState = 0;
  	
 	plantPID.dState = 0;
-	plantPID.dGain  = 0.0580;
+	plantPID.dGain  = 0;
 	
 }
 
@@ -79,6 +79,7 @@ void ControlPID(void)
 			}
 
 			
+			
 			if (RightDeviation > LeftDeviation)
 			{
 				drive = UpdatePID(&plantPID, -LeftDeviation, GetZettlexPosition());
@@ -90,10 +91,7 @@ void ControlPID(void)
 			pFOC->pExecSpeedRampM1(drive,0);
 		}
 		
-		CmdSend(GetZettlexPosition() >> 16);
-		CmdSend(GetZettlexPosition());
-				CmdSend(0);
-				CmdSend(0);		
+
 	}		
 }
 
@@ -106,29 +104,32 @@ void ControlPID(void)
   */
 double UpdatePID(SPid * pid, double error, double position)
 {
-  double pTerm, dTerm, iTerm;
+  double pTerm = 0, dTerm = 0, iTerm = 0;
  
-  pTerm = pid->pGain * error;    			// calculate the proportional term
-	
+	pTerm = pid->pGain * error;    				// calculate the proportional term
+
 	if (pTerm > plantPID.pMax)
 		pTerm = plantPID.pMax;
 	else if (pTerm < plantPID.pMin)
-		pTerm = plantPID.pMin;
+		pTerm = plantPID.pMin;		
 	
-  pid->iState += error;          			// calculate the integral state with appropriate limiting
-  if (pid->iState > pid->iMax)
-      pid->iState = pid->iMax;     
-  else if (pid->iState < pid->iMin) 
-      pid->iState = pid->iMin;
+	pid->iState += error;          				// calculate the integral state with appropriate limiting
+	if (pid->iState > pid->iMax)
+			pid->iState = pid->iMax;     
+	else if (pid->iState < pid->iMin) 
+			pid->iState = pid->iMin;
+		
+	iTerm = pid->iGain * pid->iState;    // calculate the integral term
 	
-  iTerm = pid->iGain * pid->iState;    // calculate the integral term
+	
 	if (position > pid->dState)
 		dTerm = pid->dGain * (position - pid->dState);
 	else
 		dTerm = -pid->dGain * (pid->dState - position);
 	
-  pid->dState = position;
-	
+	pid->dState = position;			
+
+
   return (pTerm + iTerm - dTerm);
 }
 

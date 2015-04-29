@@ -60,6 +60,7 @@ void SystemInitialize(void)
 
 }
 extern DataZettlex_t Zettlex;
+extern int32_t drive;
 /**
   * @brief  Blinky
   * @param  None
@@ -88,7 +89,12 @@ void Blinky(void)
 				GPIO_SetBits(GPIOE, GPIO_Pin_10);
 			else
 				GPIO_ResetBits(GPIOE, GPIO_Pin_10);
-		}		
+		}
+
+		CmdSend(GetZettlexPosition() >> 16);
+		CmdSend(GetZettlexPosition());
+				CmdSend(pFOC->pGetRegM1(MC_PROTOCOL_REG_MEAS_EL_ANGLE) >> 16);
+				CmdSend(pFOC->pGetRegM1(MC_PROTOCOL_REG_MEAS_EL_ANGLE));		
 	}
 }
 

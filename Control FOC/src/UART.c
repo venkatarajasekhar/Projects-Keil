@@ -87,9 +87,9 @@ void InitUART(void)
 	USART_Cmd(USART, ENABLE);
 
 	USART_ITConfig(USART, USART_IT_RXNE, ENABLE);
-	USART_ITConfig(USART, USART_IT_IDLE, ENABLE);	
-
 }
+
+
 #define SizeUsartTx	8
 
 uint8_t	TxBuf[SizeUsartTx+10];
@@ -111,9 +111,11 @@ void USART6_IRQHandler(void)
 	{
 		b = USART->DR;
 		ReceivedDataUART6(b);										// Обработка принятого байта
+		USART_ITConfig(USART, USART_IT_IDLE, ENABLE);	
 	}
 	else if(USART_GetITStatus(USART, USART_IT_IDLE) == SET)
 	{
+		USART_ITConfig(USART, USART_IT_IDLE, DISABLE);		
 		ProcessFrameUART6();
 	}	
 	else if(USART_GetITStatus(USART, USART_IT_TXE) != RESET)
@@ -133,7 +135,6 @@ void USART6_IRQHandler(void)
 	{
 		USART_ITConfig(USART, USART_IT_TC, DISABLE);
 		USART_ITConfig(USART, USART_IT_RXNE, ENABLE);
-		USART_ITConfig(USART, USART_IT_IDLE, ENABLE);		
 		GPIO_ResetBits(GPIO_DE, 1<<PIN_DE1);
 		GPIO_ResetBits(GPIO_RE, 1<<PIN_RE1);	
 		USART->DR;
