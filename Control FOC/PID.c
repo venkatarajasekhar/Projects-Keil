@@ -37,13 +37,13 @@ void InitPID(void)
 {
 	plantPID.Position = 0x010000;
 	
-	plantPID.pGain = 0.034;
-	plantPID.pMin  = -100;
-	plantPID.pMax	 = 100;
+	plantPID.pGain = 0.032;
+	plantPID.pMin  = -10;
+	plantPID.pMax	 = 10;
 
 	plantPID.iMin   = -4720;
 	plantPID.iMax   = 5720;
-	plantPID.iGain  = 0.00135;
+	plantPID.iGain  = 0.00085;
 	plantPID.iState = 0;
  	
 	plantPID.dState = 0;
